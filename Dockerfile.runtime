@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir uv
 
 # Download and install pre-built typst binary
-RUN TYPST_VERSION=$(curl -s https://api.github.com/repos/typst/typst/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4) && \
+RUN TYPST_VERSION=v0.15.1 && \
     curl -L "https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" | tar -xJ && \
     mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
     rm -rf typst-x86_64-unknown-linux-musl
