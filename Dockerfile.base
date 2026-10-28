@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone typst repository with all optimizations and generate docs
-RUN git clone --depth 1 --single-branch --no-tags https://github.com/typst/typst.git /tmp/typst && \
+RUN git clone --depth 1 --single-branch --branch v0.14.2 https://github.com/typst/typst.git /tmp/typst && \
     cd /tmp/typst && \
     cargo run --package typst-docs -- --assets-dir /usr/local/share/typst-docs --out-file /usr/local/share/typst-docs/main.json && \
     rm -rf /tmp/typst
