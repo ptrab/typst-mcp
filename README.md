@@ -31,7 +31,7 @@ The server provides the following tools:
 ## Getting Started
 
 - Clone this repository
-  - `git clone https://github.com/johannesbrandenburger/typst-mcp.git`
+  - `git clone https://github.com/ptrab/typst-mcp.git`
 - Clone the [typst repository](https://github.com/typst/typst.git)
   - `git clone https://github.com/typst/typst.git`
 - Run the docs generation in the typst repository
@@ -84,7 +84,7 @@ Add the following to your Claude Desktop configuration file (`claude_desktop_con
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }
@@ -100,7 +100,7 @@ Or for local installation:
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }
@@ -118,7 +118,7 @@ Create `.cursor/mcp.json` in your project root for project-specific configuratio
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }
@@ -149,7 +149,7 @@ Create `.roo/mcp.json` in your project root for project-specific configuration:
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }
@@ -180,7 +180,7 @@ Create or edit the `opencode.json` file in your project root:
     "typst": {
       "type": "local",
       "command": ["docker", "run", "--rm", "-i", 
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ],
       "enabled": true
     }
@@ -214,7 +214,7 @@ Configure MCP servers in your Claude Code settings file (`~/.claude/settings.jso
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }
@@ -248,7 +248,7 @@ VS Code's Agent Mode has native MCP support (no extension required):
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "ghcr.io/johannesbrandenburger/typst-mcp:latest"
+        "ghcr.io/ptrab/typst-mcp:latest"
       ]
     }
   }

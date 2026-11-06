@@ -1,18 +1,19 @@
 # Runtime image using pre-built base with Typst documentation
 # Build the base image first: docker build -f Dockerfile.base -t typst-mcp-base .
-ARG BASE_IMAGE=ghcr.io/bapttf/typst-mcp-base:latest
+ARG BASE_IMAGE=ghcr.io/ptrab/typst-mcp-base:latest
 FROM ${BASE_IMAGE} AS base
 
-# Python builder stage
-FROM python:3.12-slim AS python-builder
+# Python builder stage (Alpine/musl so the .venv wheels are musl-compatible with the Alpine runtime)
+FROM docker.io/library/python:3.12-alpine@sha256:213242b537a1c166a0c53e903461fc18d5518e7196c93dbecda452660a848918 AS python-builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_CACHE_DIR=/tmp/uv-cache
 
-# Install uv for Python package management
-RUN pip install --no-cache-dir uv
+# Install uv pinned to a fixed version for reproducible builds
+# uv==0.13.6 provides musllinux_1_1_x86_64 wheels on PyPI (verified 2026-11-06: uv-0.13.6-py3-none-musllinux_1_1_x86_64.whl exists on https://pypi.org/simple/uv/)
+RUN pip install --no-cache-dir uv==0.13.6
 
 # Set working directory
 WORKDIR /app
@@ -23,36 +24,41 @@ COPY pyproject.toml uv.lock ./
 # Install Python dependencies
 RUN uv sync --frozen --no-dev
 
-# Final runtime image
-FROM python:3.12-slim AS runtime
+# Typst binary builder stage (curl/xz live here and never reach the runtime image)
+FROM docker.io/library/python:3.12-alpine@sha256:213242b537a1c166a0c53e903461fc18d5518e7196c93dbecda452660a848918 AS typst-builder
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    UV_CACHE_DIR=/tmp/uv-cache
+RUN apk add --no-cache curl xz tar
 
-# Install only runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Install pandoc for LaTeX to Typst conversion
-    pandoc \
-    # Install ca-certificates for HTTPS downloads
-    ca-certificates \
-    # Install curl for downloading typst binary
-    curl \
-    # Install xz-utils for extracting typst binary
-    xz-utils \
-    # Clean up apt caches to reduce image size
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for Python package management
-RUN pip install --no-cache-dir uv
-
-# Download and install pre-built typst binary
 RUN TYPST_VERSION=v0.15.1 && \
     curl -L "https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" | tar -xJ && \
     mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
     rm -rf typst-x86_64-unknown-linux-musl
+
+# Final runtime image
+FROM docker.io/library/python:3.12-alpine@sha256:213242b537a1c166a0c53e903461fc18d5518e7196c93dbecda452660a848918 AS runtime
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    HOME=/tmp
+
+# HOME=/tmp provides a writable home directory for any dependency that may need one (adduser -S does not create a home directory).
+
+# Install only runtime dependencies (Alpine apk replaces the former apt-get install)
+# pandoc is in Alpine's community repo; enable it explicitly
+# Alpine apk model: digest-pinned base + apk upgrade provides security patching without per-package pins
+# Alpine 3.24.4 confirmed via Docker Hub API (image config history references alpine-minirootfs-3.24.4-x86_64.tar.gz). Pandoc from community repo v3.10 (CVE-2025-51591 status contingent — no Debian fix exists; Alpine pandoc is more current).
+RUN apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.24/community pandoc ca-certificates && \
+    apk upgrade --no-cache
+
+# Remove pip from the runtime image (not needed; eliminates pip CVEs)
+# The venv created by `uv sync` does not include pip by default, so removing system pip is sufficient to eliminate pip from the runtime.
+RUN rm -rf /usr/local/lib/python3.12/site-packages/pip \
+        /usr/local/lib/python3.12/site-packages/pip-*.dist-info && \
+    rm -f /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.12
+
+# Copy pre-built typst binary from typst-builder stage (no curl/xz in runtime)
+COPY --from=typst-builder /usr/local/bin/typst /usr/local/bin/typst
 
 # Set working directory
 WORKDIR /app
@@ -67,12 +73,11 @@ COPY --from=base /usr/local/share/typst-docs /app/typst-docs
 COPY server.py ./
 COPY typst-docs-json-schema.json ./
 
-# Create non-root user for security
-RUN useradd --create-home --shell /bin/bash typst && \
-    chown -R typst:typst /app && \
-    mkdir -p /tmp/uv-cache && \
-    chown -R typst:typst /tmp/uv-cache
+# Create non-root user for security (Alpine BusyBox adduser/addgroup; no uv-cache dir needed)
+RUN addgroup -S typst && \
+    adduser -S -G typst -s /bin/sh typst && \
+    chown -R typst:typst /app
 USER typst
 
-# Set entrypoint
-ENTRYPOINT ["uv", "run", "python", "server.py"]
+# Set entrypoint (invoke venv python directly; uv and pip are absent at runtime)
+ENTRYPOINT ["/app/.venv/bin/python", "server.py"]

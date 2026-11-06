@@ -6,7 +6,7 @@
 set -e
 
 # Allow custom registry via environment variable
-REGISTRY="${TYPST_MCP_REGISTRY:-ghcr.io/johannesbrandenburger/typst-mcp}"
+REGISTRY="${TYPST_MCP_REGISTRY:-ghcr.io/ptrab/typst-mcp}"
 
 echo "🏗️  Typst MCP Docker Build Script"
 echo "================================="

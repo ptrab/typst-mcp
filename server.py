@@ -291,7 +291,7 @@ def check_if_snippets_are_valid_typst_syntax(typst_snippets: list) -> str:
     return json.dumps(results)
 
 @mcp.tool()
-def typst_snippet_to_image(typst_snippet) -> Image | str:
+def typst_snippet_to_image(typst_snippet):
     r"""
     Converts a typst text to an image using the typst command line tool.
     It is capable of converting multiple pages to a single png image.

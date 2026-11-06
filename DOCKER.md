@@ -6,7 +6,7 @@ This project uses a multi-stage Docker build system with a base image containing
 
 ```bash
 # Pull and run the pre-built image
-docker run --rm -i ghcr.io/johannesbrandenburger/typst-mcp:latest
+docker run --rm -i ghcr.io/ptrab/typst-mcp:latest
 ```
 
 ## Building
@@ -31,10 +31,10 @@ docker run --rm -i ghcr.io/johannesbrandenburger/typst-mcp:latest
 
 ```bash
 # Build base image with Typst documentation
-docker build -f Dockerfile.base -t ghcr.io/johannesbrandenburger/typst-mcp-base:latest .
+docker build -f Dockerfile.base -t ghcr.io/ptrab/typst-mcp-base:latest .
 
 # Build runtime image
-docker build -f Dockerfile.runtime -t ghcr.io/johannesbrandenburger/typst-mcp:latest .
+docker build -f Dockerfile.runtime -t ghcr.io/ptrab/typst-mcp:latest .
 ```
 
 ## Docker Compose
@@ -43,7 +43,7 @@ docker build -f Dockerfile.runtime -t ghcr.io/johannesbrandenburger/typst-mcp:la
 version: '3.8'
 services:
   typst-mcp:
-    image: ghcr.io/johannesbrandenburger/typst-mcp:latest
+    image: ghcr.io/ptrab/typst-mcp:latest
     stdin_open: true
     tty: false
     restart: unless-stopped

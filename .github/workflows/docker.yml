@@ -62,7 +62,7 @@ jobs:
 
     - name: Build and push base image
       if: steps.check-base.outputs.exists == 'false' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile.base
@@ -115,13 +115,34 @@ jobs:
         tags: |
           type=raw,value=latest
 
-    - name: Build and push runtime image
-      uses: docker/build-push-action@v5
+    - name: Build runtime image (load, do not push yet)
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile.runtime
-        push: ${{ github.event_name != 'pull_request' }}
+        push: false
+        load: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           BASE_IMAGE=${{ steps.meta-base.outputs.tags }}
+
+    - name: Resolve Trivy scan target
+      id: scan-ref
+      run: echo "tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@v0.36.0  # latest stable as of 2026-11-06 (verified via GitHub API)
+      with:
+        image-ref: ${{ steps.scan-ref.outputs.tag }}
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+        ignore-unfixed: true
+
+    - name: Push runtime image
+      if: github.event_name != 'pull_request'
+      run: |
+        for tag in $(echo "${{ steps.meta.outputs.tags }}"); do
+          docker push "$tag"
+        done

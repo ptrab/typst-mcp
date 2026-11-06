@@ -1,9 +1,11 @@
 # Base image with pre-compiled Typst documentation
 # This image only needs to be rebuilt when Typst documentation changes
-FROM rustlang/rust:nightly-slim
+# Pinned to an immutable digest for reproducible builds.
+FROM docker.io/rustlang/rust:nightly-slim@sha256:8bd003c2de8d4ed21ad5b6828175b20d252b59d35d04fc9b89fa98a3d44c110f
 
 # Install system dependencies for typst-docs
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# The base image is published to the registry and could be pulled independently, so hardening it with apt-get upgrade reduces its standalone attack surface even though its OS packages do not reach the runtime image.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     # Install pkg-config for Rust dependencies
     pkg-config \
     # Install libssl-dev for Rust dependencies
@@ -25,7 +27,7 @@ RUN git clone --depth 1 --single-branch --branch v0.14.2 https://github.com/typs
 # Set labels for the base image
 LABEL org.opencontainers.image.title="Typst MCP Base"
 LABEL org.opencontainers.image.description="Base image with pre-compiled Typst documentation"
-LABEL org.opencontainers.image.source="https://github.com/bapttf/typst-mcp"
+LABEL org.opencontainers.image.source="https://github.com/ptrab/typst-mcp"
 
 # Default command to show docs are ready
 CMD ["ls", "-la", "/usr/local/share/typst-docs/"]
